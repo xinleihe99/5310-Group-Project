@@ -1,0 +1,451 @@
+#Normalization SQL Code
+CREATE TABLE    index(
+  index_id     	      int PRIMARY KEY,
+  index_name  	      varchar,
+  index_group_id	    int,
+  index_group_name  	varchar);
+ 
+CREATE TABLE Product(
+	product_id        	int PRIMARY KEY,
+	prod_name        	    varchar,
+	product_type_no      	varchar,
+	product_type_name	    varchar,
+	product_group_name	  varchar);
+ 
+CREATE TABLE Department (
+	department_id         int PRIMARY KEY,
+	department_name       varchar);
+                   	 
+CREATE TABLE Graphical_Appearance (
+	graphical_id            	  int PRIMARY KEY,
+	graphical_appearance_name	  varchar);
+ 
+CREATE TABLE Color (
+	color_id                      int PRIMARY KEY,
+	color_group_code              int,
+	color_group_name              varchar,
+	perceived_color_master_id     int,
+	perceived_color_master_name   varchar);
+	
+CREATE  TABLE section(
+   section_id   	          int primary key,
+   section_name 	          varchar,
+   garment_group_no	        int,
+   garment_group_name  	    varchar);
+ 
+CREATE TABLE fashion_news(
+  fn_id                    	  int PRIMARY KEY NOT NULL,
+  FN                        	varchar,
+  fashion_news_frequency    	varchar,
+  active                    	varchar);
+ 
+CREATE TABLE customer_info (
+	customer_id           varchar PRIMARY KEY,
+	age                   int,
+	postal                varchar,
+	club_member_status    varchar);
+ 
+CREATE TABLE article (
+	article_id            int,
+	product_id            int,
+	department_id         int,
+	graphical_id          int,
+	color_id              int,
+	section_id            int,
+	index_id              int,
+	PRIMARY KEY (article_id),
+	FOREIGN KEY (product_id) REFERENCES Product,
+	FOREIGN KEY (department_id) REFERENCES Department,
+	FOREIGN KEY (graphical_id) REFERENCES Graphical_Appearance,
+	FOREIGN KEY (color_id) REFERENCES Color,
+	FOREIGN KEY (section_id) REFERENCES section,
+	FOREIGN KEY (index_id) REFERENCES index);
+ 
+CREATE TABLE trans (
+	t_dat    	            date,
+	customer_id	          varchar,
+	article_id 	          int,
+	price numeric,
+	sales_channel_id      varchar,
+	primary key(t_dat, customer_id, article_id, price),
+    FOREIGN KEY (customer_id) REFERENCES customer_info,
+    FOREIGN KEY (article_id) REFERENCES article);
+ 
+CREATE TABLE customer_bridge (
+customer_id        	varchar,
+fn_id            	int,
+FOREIGN KEY (customer_id) REFERENCES customer_info,
+FOREIGN KEY (fn_id) REFERENCES fashion_news);
+ 
+#R code for ETL
+library(dplyr)
+trans <- read.csv("~/Documents/Resume and Cover letter/Columbia/5310 SQL/project /transactions_train.csv", stringsAsFactors=TRUE)
+customer_bridge <- read.csv("~/Documents/Resume and Cover letter/Columbia/5310 SQL/project /mina'stable/customer_bridge.csv", stringsAsFactors=TRUE)
+ 
+trans <- trans[1:529805,]
+ 
+trans <- unique(trans)
+ 
+unique_customer_id <- unique(trans$customer_id)
+unique_customer_id <- as.data.frame(unique_customer_id)
+ 
+ 
+customer_bridge <- customer_bridge %>% right_join(unique_customer_id, by = c("customer_id" = "unique_customer_id"))
+#customer_bridge <- customers %>%
+ # left_join(customer_info, by = c("age" = "age", "club_member_status" = "club_member_status")) %>%
+  #left_join(fashion_news, by = c("FN" = "FN", "Active" = "Active", "fashion_news_frequency" = "fashion_news_frequency"))
+ 
+#customer_bridge <- customer_bridge %>% distinct(customer_id.y, fashion_news_id)
+ 
+write.csv(customer_bridge, "/Users/devin/Documents/Resume and Cover letter/Columbia/5310 SQL/project /customerbridge.csv")
+write.csv(trans, "/Users/devin/Documents/Resume and Cover letter/Columbia/5310 SQL/project /trans.csv")
+ 
+articlebridge <- read.csv("~/Documents/Resume and Cover letter/Columbia/5310 SQL/articlebridge.csv", stringsAsFactors=TRUE)
+ 
+unique_article_id <- unique(trans$article_id)
+unique_article_id <- as.data.frame(unique_article_id)
+ 
+articlebridge <- articlebridge %>% right_join(unique_article_id, by = c("article_id" = "unique_article_id"))
+ 
+ 
+articlebridge <- articlebridge %>% distinct(articlebridge$article_id, .keep_all= TRUE)
+write.csv(articlebridge, "/Users/devin/Documents/Resume and Cover letter/Columbia/5310 SQL/project /articlebridge_new.csv")
+ 
+#color id
+color <- read.csv("~/Documents/Resume and Cover letter/Columbia/5310 SQL/project /mina'stable/color.csv", stringsAsFactors=TRUE)
+unique_color_id <- unique(articlebridge$colour_id)
+unique_color_id <- as.data.frame(unique_color_id)
+ 
+color <- color %>% right_join(unique_color_id, by = c("color_id" = "unique_color_id"))
+ 
+write.csv(color, "/Users/devin/Documents/Resume and Cover letter/Columbia/5310 SQL/project /color_new.csv")
+ 
+ 
+#department id
+department <- read.csv("~/Documents/Resume and Cover letter/Columbia/5310 SQL/project /mina'stable/department.csv", stringsAsFactors=TRUE)
+ 
+unique_department_id <- unique(articlebridge$department_id)
+unique_department_id <- as.data.frame(unique_department_id)
+ 
+department <- department %>% right_join(unique_department_id, by = c("department_id" = "unique_department_id"))
+ 
+write.csv(department, "/Users/devin/Documents/Resume and Cover letter/Columbia/5310 SQL/project /department_new.csv")
+ 
+ 
+#graphical id
+graphical <- read.csv("~/Documents/Resume and Cover letter/Columbia/5310 SQL/project /mina'stable/graphical_appearance.csv", stringsAsFactors=TRUE)
+ 
+unique_graphical_id <- unique(articlebridge$graphical_id)
+unique_graphical_id <- as.data.frame(unique_graphical_id)
+ 
+graphical <- graphical %>% right_join(unique_graphical_id, by = c("graphical_id" = "unique_graphical_id"))
+ 
+write.csv(graphical, "/Users/devin/Documents/Resume and Cover letter/Columbia/5310 SQL/project /graphical_new.csv")
+ 
+#index id
+index <- read.csv("~/Documents/Resume and Cover letter/Columbia/5310 SQL/project /mina'stable/index.csv", stringsAsFactors=TRUE)
+ 
+unique_index_id <- unique(articlebridge$index_id)
+unique_index_id <- as.data.frame(unique_index_id)
+ 
+index <- index %>% right_join(unique_index_id, by = c("index_id" = "unique_index_id"))
+ 
+write.csv(index, "/Users/devin/Documents/Resume and Cover letter/Columbia/5310 SQL/project /index_new.csv")
+ 
+#product id
+product <- read.csv("~/Documents/Resume and Cover letter/Columbia/5310 SQL/project /mina'stable/product.csv", stringsAsFactors=TRUE)
+ 
+unique_product_id <- unique(articlebridge$product_id)
+unique_product_id <- as.data.frame(unique_product_id)
+ 
+product <- product %>% right_join(unique_product_id, by = c("product_id" = "unique_product_id"))
+ 
+write.csv(product, "/Users/devin/Documents/Resume and Cover letter/Columbia/5310 SQL/project /product_new.csv")
+ 
+#section id
+section <- read.csv("~/Documents/Resume and Cover letter/Columbia/5310 SQL/project /mina'stable/section.csv", stringsAsFactors=TRUE)
+ 
+unique_section_id <- unique(articlebridge$section_id)
+unique_section_id <- as.data.frame(unique_section_id)
+ 
+section <- section %>% right_join(unique_section_id, by = c("section_id" = "unique_section_id"))
+ 
+write.csv(section, "/Users/devin/Documents/Resume and Cover letter/Columbia/5310 SQL/project /section_new.csv")
+#section id
+section <- read.csv("~/Documents/Resume and Cover letter/Columbia/5310 SQL/project /mina'stable/section.csv", stringsAsFactors=TRUE)
+ 
+unique_section_id <- unique(articlebridge$section_id)
+unique_section_id <- as.data.frame(unique_section_id)
+ 
+section <- section %>% right_join(unique_section_id, by = c("section_id" = "unique_section_id"))
+ 
+write.csv(section, "/Users/devin/Documents/Resume and Cover letter/Columbia/5310 SQL/project /section_new.csv")
+ 
+ 
+#customer_info
+ 
+customer_info <- read.csv("~/Documents/Resume and Cover letter/Columbia/5310 SQL/project /mina'stable/customer_info.csv", stringsAsFactors=TRUE)
+ 
+unique_customer_info_id <- unique(customer_bridge$customer_id)
+unique_customer_info_id <- as.data.frame(unique_customer_info_id)
+ 
+customer_info <- customer_info %>% right_join(unique_customer_info_id, by = c("customer_id" = "unique_customer_info_id"))
+ 
+write.csv(customer_info, "/Users/devin/Documents/Resume and Cover letter/Columbia/5310 SQL/project /customer_info_new.csv")
+ 
+#fashion_news
+ 
+fashion_news <- read.csv("~/Documents/Resume and Cover letter/Columbia/5310 SQL/project /mina'stable/fashion_news.csv", stringsAsFactors=TRUE)
+ 
+unique_fn_id <- unique(customer_bridge$fn_id)
+unique_fn_id <- as.data.frame(unique_fn_id)
+ 
+fashion_news <- fashion_news %>% select(fn,fashion_news_frequency, active)
+fashion_news <- fashion_news[1:10,]
+fashion_news <- cbind(fashion_news, unique_fn_id)
+fashion_news <- fashion_news[1:9,]
+ 
+write.csv(fashion_news, "/Users/devin/Documents/Resume and Cover letter/Columbia/5310 SQL/project /fashion_news_new.csv")
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+Python code for ETL
+#!/usr/bin/env python
+# coding: utf-8
+ 
+ 
+import psycopg2
+import pandas as pd
+ 
+conn = psycopg2.connect(
+   host="localhost",
+   database="5310",
+   user="postgres",
+   password="123")
+  
+print("Database connected successfully") 
+cur = conn.cursor()
+ 
+cur.execute(
+        """
+        CREATE TABLE index(
+index_id     	int primary key,
+index_name 	varchar,
+index_group_id	int,
+index_group_name  	varchar);
+ 
+CREATE TABLE Product(
+	product_id        	int PRIMARY KEY,
+	prod_name        	varchar,
+	product_type_no    	varchar,
+	product_type_name	varchar,
+	product_group_name	varchar);
+ 
+CREATE TABLE Department (
+	department_id int PRIMARY KEY,
+	department_name varchar);
+                   	 
+CREATE TABLE Graphical_Appearance (
+	graphical_id            	int PRIMARY KEY,
+	graphical_appearance_name	varchar);
+ 
+ 
+CREATE TABLE Color (
+	color_id int PRIMARY KEY,
+	color_group_code int,
+	color_group_name varchar,
+	perceived_color_master_id int,
+	perceived_color_master_name varchar);
+    
+	
+create table section(
+   section_id   	int  primary key,
+   section_name 	varchar,
+   garment_group_no	int,
+   garment_group_name  	varchar);
+ 
+ 
+CREATE TABLE fashion_news(
+fn_id                    	int PRIMARY KEY NOT NULL,
+FN                        	varchar,
+fashion_news_frequency    	varchar,
+active                    	varchar);
+ 
+ 
+CREATE TABLE customer_info (
+	customer_id varchar PRIMARY KEY,
+	age int,
+	postal varchar,
+	club_member_status varchar);
+    
+	
+ 
+CREATE TABLE article_bridge (
+	article_id int,
+	product_id int,
+	department_id int,
+	graphical_id int,
+	color_id int,
+	section_id int,
+	index_id int,
+	PRIMARY KEY (article_id),
+	FOREIGN KEY (product_id) REFERENCES Product,
+	FOREIGN KEY (department_id) REFERENCES Department,
+	FOREIGN KEY (graphical_id) REFERENCES Graphical_Appearance,
+	FOREIGN KEY (color_id) REFERENCES Color,
+	FOREIGN KEY (section_id) REFERENCES section,
+	FOREIGN KEY (index_id) REFERENCES index);
+ 
+CREATE TABLE trans (
+	trans_id        int,
+	t_dat    	date,
+	customer_id	varchar,
+	article_id 	int,
+	price numeric,
+	sales_channel_id varchar,
+	primary key(trans_id, t_dat, customer_id, article_id, price),
+    FOREIGN KEY (customer_id) REFERENCES customer_info,
+    FOREIGN KEY (article_id) REFERENCES article_bridge);
+CREATE TABLE customer_bridge (
+customer_id        	varchar,
+fn_id            	int,
+FOREIGN KEY (customer_id) REFERENCES customer_info,
+FOREIGN KEY (fn_id) REFERENCES fashion_news);
+""")
+    
+conn.commit()
+ 
+#read data 
+product = pd.read_csv(r'/Users/minahsu/Desktop/Columbia Work/Spring 2022/SQL/Group Project/Devin Table/product_new.csv')
+product= product.loc[:, ['product_id','prod_name','product_type_no', 'product_type_name', 'product_group_name']]
+product = product.drop([8664])
+product
+ 
+department = pd.read_csv(r'/Users/minahsu/Desktop/Columbia Work/Spring 2022/SQL/Group Project/Devin Table/department_new.csv')
+department = department.loc[:, ['department_id','department_name']]
+department = department.drop([225])
+department
+ 
+graphical_appearance = pd.read_csv(r'/Users/minahsu/Desktop/Columbia Work/Spring 2022/SQL/Group Project/Devin Table/graphical_new.csv')
+graphical_appearance = graphical_appearance.loc[:, ['graphical_id','graphical_appearance_name']]
+graphical_appearance = graphical_appearance.drop([29])
+graphical_appearance
+ 
+color = pd.read_csv(r'/Users/minahsu/Desktop/Columbia Work/Spring 2022/SQL/Group Project/Devin Table/color_new.csv')
+color = color.loc[:, ["color_id",
+                        "color_group_code",
+                        "color_group_name",
+                        "perceived_color_master_id",
+                        "perceived_color_master_name"]]
+color
+ 
+color = color.drop([211])
+ 
+section = pd.read_csv(r'/Users/minahsu/Desktop/Columbia Work/Spring 2022/SQL/Group Project/Devin Table/section_new.csv')
+section = section.loc[:, ["section_id",
+                          "section_name",
+                        "garment_group_no",
+                        "garment_group_name"]]
+section = section.drop([181])
+section
+ 
+index = pd.read_csv(r'/Users/minahsu/Desktop/Columbia Work/Spring 2022/SQL/Group Project/Devin Table/index_new.csv')
+index = index.loc[:, ['index_id', 'index_name', 'index_group_id', 'index_group_name']]
+index = index.drop([10])
+ 
+fashion_news = pd.read_csv(r'/Users/minahsu/Desktop/Columbia Work/Spring 2022/SQL/Group Project/Devin Table/fashion_news_new.csv')
+fashion_news = fashion_news.loc[:, ['fn', 'fashion_news_frequency', 'active', 'unique_fn_id']]
+fashion_news = fashion_news.rename(columns={"unique_fn_id": "fn_id"})
+fashion_news
+ 
+customer_info = pd.read_csv(r'/Users/minahsu/Desktop/Columbia Work/Spring 2022/SQL/Group Project/Devin Table/customer_info_new.csv')
+ 
+customer_info = customer_info.loc[:, ["customer_id",
+                        "age",
+                        "club_member_status"]]
+customer_info
+ 
+trans = pd.read_csv(r'/Users/minahsu/Desktop/Columbia Work/Spring 2022/SQL/Group Project/Devin Table/trans.csv')
+trans = trans.loc[:, ["t_dat",
+                        "customer_id",
+                        "article_id",
+                        "price",
+                        "sales_channel_id"]]
+trans = trans.drop_duplicates()
+trans
+ 
+trans.insert(0, 'trans_id', range(500000, 500000 + len(trans)))
+trans
+ 
+trans.info()
+ 
+article_bridge = pd.read_csv(r'/Users/minahsu/Desktop/Columbia Work/Spring 2022/SQL/Group Project/Devin Table/articlebridge_new.csv')
+article_bridge = article_bridge.loc[:, ["article_id",
+                           "product_id",
+                           "department_id",
+                           "graphical_id",
+                           "colour_id",
+                           "section_id",
+                            "index_id"]]
+article_bridge = article_bridge.rename(columns={"colour_id": "color_id"})
+article_bridge
+ 
+customer_bridge = pd.read_csv(r'/Users/minahsu/Desktop/Columbia Work/Spring 2022/SQL/Group Project/Devin Table/customerbridge.csv')
+customer_bridge = customer_bridge.loc[:, ["customer_id", "fn_id"]]
+customer_bridge
+ 
+#read data into postgresql
+#!pip install sqlalchemy
+from sqlalchemy import create_engine
+import matplotlib.pyplot as plt
+ 
+engine = create_engine("postgresql://postgres:123@localhost:5432/5310")
+con = engine.connect()
+ 
+color = pd.DataFrame(color)
+color.to_sql(name='color',con=con,if_exists='append', index=False)
+ 
+customer_info = pd.DataFrame(customer_info)
+customer_info.to_sql(name='customer_info',con=con,if_exists='append', index=False)
+ 
+department = pd.DataFrame(department)
+department.to_sql(name='department',con=con,if_exists='append', index=False)
+ 
+fashion_news = pd.DataFrame(fashion_news)
+fashion_news.to_sql(name='fashion_news',con=con,if_exists='append', index=False)
+ 
+graphical_appearance = pd.DataFrame(graphical_appearance)
+graphical_appearance.to_sql(name='graphical_appearance',con=con,if_exists='append', index=False)
+ 
+index = pd.DataFrame(index)
+index.to_sql(name='index',con=con,if_exists='append', index=False)
+product = pd.DataFrame(product)
+product.to_sql(name='product',con=con,if_exists='append', index=False)
+ 
+section = pd.DataFrame(section)
+section.to_sql(name='section',con=con,if_exists='append', index=False)
+ 
+article_bridge = pd.DataFrame(article_bridge)
+article_bridge.to_sql(name='article_bridge',con=con,if_exists='append', index=False)
+ 
+trans = pd.DataFrame(trans)
+trans.to_sql(name='trans',con=con,if_exists='append', index=False)
+ 
+customer_bridge = pd.DataFrame(customer_bridge)
+customer_bridge.to_sql(name='customer_bridge',con=con,if_exists='append', index=False)
+ 
+cur.close()
+ 
